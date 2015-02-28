@@ -44,5 +44,19 @@ complex than the access controller and is more likely to fail.  Support for
 external EEPROM storage could be added to the controller software in order to
 increase the number of credentials that can be stored on it.
 
-The access controller software can be found in the "arduino"  subdirectory in
+The access controller software can be found in the "arduino" subdirectory in
 the repo.
+
+## Known Limitations
+
+The access controller does not have a real-time clock, but it uses an
+internal timekeeping method that allows it to run for 34.8 years without clock
+rollover.  This period is long enough we can ignore the effects of clock
+rollover when doing clock math.  This simplifies the implementation of
+several features.
+
+If your access controller will be continuously powered for more than 34.8 years
+and this period is unacceptably low, the easiest change you can make is to
+change the type of the "era" field in the time structure to uint16_t.  This
+will give you ~= 8919.6 years before rollover at the expense of slower time
+arithmetic.
