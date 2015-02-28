@@ -13,6 +13,9 @@
 #include "time.h"
 #include "cli.h"
 
+// For testing millis() rollover.
+extern volatile unsigned long timer0_millis;
+
 void setup() {
   Serial.begin(115200);
 
@@ -30,6 +33,9 @@ void setup() {
 
   cli_init();
   PL("cli initialized");
+
+  // For testing millis() rollover.
+  // timer0_millis = -5000;
 }
 
 void loop() {
