@@ -1,8 +1,8 @@
 // Utilities
 //
 
-#ifndef DOOR_UTILS_H
-#define DOOR_UTILS_H
+#ifndef DORBO_UTILS_H
+#define DORBO_UTILS_H
 
 #include <Arduino.h>
 

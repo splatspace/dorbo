@@ -7,7 +7,7 @@
 #include <Arduino.h>
 
 #include "config.h"
-#include "door_utils.h"
+#include "dorbo_utils.h"
 #include "time.h"
 
 void wiegand_readers_init();
@@ -22,7 +22,6 @@ __attribute__((packed)) struct wiegand26_credential {
   uint8_t facility;
   uint16_t user;
 };
-
 
 #define P_WIEGAND26_CREDENTIAL(e) \
   P("wiegand26_credential<facility="); \

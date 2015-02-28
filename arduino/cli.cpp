@@ -82,8 +82,8 @@
 //////////////////////////////////////////////////////////////////////////////
 
 // Buffers a command until we parse and run it
-char command[40];
-byte command_index = 0;
+static char command[40];
+static byte command_index = 0;
 
 void clear_command() {
   memset(&command, 0, sizeof(command));

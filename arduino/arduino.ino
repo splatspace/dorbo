@@ -1,4 +1,3 @@
-
 // Arduino IDE requires all library includes to be made from the main sketch file
 // (libraries cannot be included from other header files in the sketch).  If this
 // bug is ever fixed, you can remove these duplicate includes.
@@ -10,7 +9,7 @@
 #include "wiegand.h"
 #include "strike.h"
 #include "status_led.h"
-#include "door_utils.h"
+#include "dorbo_utils.h"
 #include "time.h"
 #include "cli.h"
 
@@ -34,10 +33,10 @@ void setup() {
 }
 
 void loop() {
-  // Update the shared loop time to avoid having to calculate it in multiple
-  // places, or pass 48-bit structs or 16-bit pointers to it.
-  time_get(&loop_time, millis());
-  
+  // We must service the time loop first so loop_time is available later
+  // in the loop.
+  time_loop();
+
   status_led_loop();
   strike_loop();
   cli_loop();

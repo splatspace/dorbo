@@ -1,7 +1,7 @@
 #include <util/atomic.h>
 
 #include "wiegand.h"
-#include "door_utils.h"
+#include "dorbo_utils.h"
 #include "time.h"
 
 // Define the PCI enablement and mask registers for the chosen port.
@@ -40,10 +40,12 @@ struct wiegand_reader {
   volatile unsigned long  last_changed;
 };
 
-struct wiegand_reader wiegand_readers[NUM_WIEGAND_READERS];
+static byte wiegand_reader_pins[NUM_WIEGAND_READERS][2] = WIEGAND_READER_PINS;
+
+static struct wiegand_reader wiegand_readers[NUM_WIEGAND_READERS];
 
 // The PCI ISR stashes the pins here to compare next time
-volatile byte previous_port_pins = 0;
+static volatile byte previous_port_pins = 0;
 
 void wiegand_readers_init(void) {
   byte port_pin_mask = 0;

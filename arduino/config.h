@@ -10,7 +10,7 @@
 // Credential Storage
 //////////////////////////////////////////////////////////////////////////////
 
-// Number of Wiegand credentials to store in EEPROM.  Each credential 
+// Number of Wiegand-26 credentials to store in EEPROM.  Each credential 
 // requires 3 bytes (24-bits; we don't store the 2 parity bits) of EEPROM 
 // and 3 bytes of SRAM (for buffering during load).  Feel free to raise if 
 // you have more memory or lower if you need room for other things.
@@ -40,8 +40,10 @@
 //#define WIEGAND_PORTD
 
 // Pins connected to readers.  All pins must be inside the IO port you 
-// defined.
-static byte wiegand_reader_pins[NUM_WIEGAND_READERS][2] = {{8, 9}, {10, 11}};
+// defined.  Must be an array initializer of two dimensions
+// [NUM_WIEGAND_READERS][2] where the inner dimension defines 
+// {DATA_0_PIN, DATA_1_PIN}.
+#define WIEGAND_READER_PINS {{8, 9}, {10, 11}}
 
 // Abort the read and reset for a new value if reader input lines are idle 
 // for this many milliseconds).  Prevents noise from accumulating and 
@@ -62,7 +64,7 @@ static byte wiegand_reader_pins[NUM_WIEGAND_READERS][2] = {{8, 9}, {10, 11}};
 // works.
 //
 // Must be greater than 0 and less than 2^31 (2147483648 ms ~= 24.9 days).
-#define WIEGAND_INPUT_TIMEOUT_MS    10
+#define WIEGAND_INPUT_TIMEOUT_MS 10
 
 //////////////////////////////////////////////////////////////////////////////
 // Door Strikes
@@ -72,11 +74,13 @@ static byte wiegand_reader_pins[NUM_WIEGAND_READERS][2] = {{8, 9}, {10, 11}};
 // controlled by one digital output pin.
 #define NUM_STRIKES 2
 
-// Pins connected to strikes.
-static byte strike_pins[NUM_STRIKES] = {6, 7};
+// Output pins connected to strikes.  Must be an array initializer of 
+// length NUM_STRIKES.
+#define STRIKE_PINS {6, 7}
 
-// How many seconds to hold the strike open.
-static unsigned int strike_open_periods[NUM_STRIKES] = {3, 3};
+// How many milliseconds to hold the strike open.  Must be an array 
+// initializer of length NUM_STRIKES.
+#define STRIKE_OPEN_PERIODS {3000, 3000}
 
 //////////////////////////////////////////////////////////////////////////////
 // Misc Hardware
