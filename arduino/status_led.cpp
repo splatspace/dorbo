@@ -8,6 +8,11 @@ void status_led_init() {
 }
 
 void status_led_loop() {
-  digitalWrite(STATUS_LED_PIN, loop_time.millis < 250 ? HIGH : LOW);
+  // The lowest 10 bits of the total millis encode 1024 ms, which is close enough to 
+  // 1 second for heartbeat purposes.  Accurate division is very slow on the AVR, 
+  // so this is a good trade-off.
+  
+  // Light the LED for 256 of the 1024 ms in our period.
+  digitalWrite(STATUS_LED_PIN, (loop_time.millis & 0x3ff) < 256 ? HIGH : LOW);
 }
 

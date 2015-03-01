@@ -415,7 +415,7 @@ void cli_init() {
 }
 
 void cli_loop() {
-  while (Serial.available()) {
+  while (Serial && Serial.available()) {
     char c = Serial.read();
     
     if (c != '\n' && command_index < sizeof(command)) {

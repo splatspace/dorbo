@@ -15,14 +15,15 @@
 #define sbi(sfr,bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
 #ifdef DEBUG
-# define P(a)       Serial.print(a)
-# define PDEC(a)    Serial.print(a, DEC)
-# define PBIN(a)    Serial.print(a, BIN)
-# define PHEX(a)    Serial.print(a, HEX)
-# define PL(a)      Serial.println(a)
-# define PLDEC(a)   Serial.println(a, DEC)
-# define PLBIN(a)   Serial.println(a, BIN)
-# define PLHEX(a)   Serial.println(a, HEX)
+# define IFSER(e)   if (Serial) { e }
+# define P(a)       IFSER(Serial.print(a);)
+# define PDEC(a)    IFSER(Serial.print(a, DEC);)
+# define PBIN(a)    IFSER(Serial.print(a, BIN);)
+# define PHEX(a)    IFSER(Serial.print(a, HEX);)
+# define PL(a)      IFSER(Serial.println(a);)
+# define PLDEC(a)   IFSER(Serial.println(a, DEC);)
+# define PLBIN(a)   IFSER(Serial.println(a, BIN);)
+# define PLHEX(a)   IFSER(Serial.println(a, HEX);)
 #else
 # define P(a)
 # define PDEC(a)
