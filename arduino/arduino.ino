@@ -7,7 +7,7 @@
 #include "config.h"
 #include "storage.h"
 #include "wiegand.h"
-#include "strike.h"
+#include "door.h"
 #include "status_led.h"
 #include "dorbo_utils.h"
 #include "time.h"
@@ -25,8 +25,8 @@ void setup() {
   status_led_init();
   PL("status LED initialized");
   
-  strike_init();
-  PL("strikes initialized");
+  door_init();
+  PL("doors initialized");
 
   wiegand_readers_init();
   PL("wiegand readers initialized");
@@ -44,7 +44,7 @@ void loop() {
   time_loop();
 
   status_led_loop();
-  strike_loop();
+  door_loop();
   cli_loop();
 
   // See if any credentials have been presented on the readers.  
@@ -57,7 +57,7 @@ void loop() {
       PL();
       if (storage_find_wiegand26_credential(&cred)) {
         PL("credential good");
-        strike_open(i);
+        door_open(i);
       } else {
         PL("credential bad");
       }

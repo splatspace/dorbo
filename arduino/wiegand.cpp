@@ -36,7 +36,7 @@ struct wiegand_reader {
   volatile byte           count;
   // Value (bits read are pushed on the right)
   volatile uint32_t       bits;
-  // Millis of the last bits change (rollover-save)
+  // Millis of the last bits change (rollover-safe)
   volatile unsigned long  last_changed;
 };
 

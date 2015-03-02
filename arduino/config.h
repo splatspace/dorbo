@@ -67,20 +67,32 @@
 #define WIEGAND_INPUT_TIMEOUT_MS 10
 
 //////////////////////////////////////////////////////////////////////////////
-// Door Strikes
+// Door Strikes and Indicators
 //////////////////////////////////////////////////////////////////////////////
 
-// Defines the number of strikes activated by this program.  Each strike is 
-// controlled by one digital output pin.
-#define NUM_STRIKES 2
+// Defines the number of doors controlled by this program.  Each door has one
+// strike controlled by one output pin.
+#define NUM_DOORS 2
 
 // Output pins connected to strikes.  Must be an array initializer of 
-// length NUM_STRIKES.
-#define STRIKE_PINS {6, 7}
+// length NUM_DOORS.
+#define DOOR_STRIKE_PINS {6, 7}
 
 // How many milliseconds to hold the strike open.  Must be an array 
-// initializer of length NUM_STRIKES.
-#define STRIKE_OPEN_PERIODS {3000, 3000}
+// initializer of length NUM_DOORS.
+#define DOOR_STRIKE_OPEN_PERIODS {3000, 3000}
+
+// Output pins connected to "access granted" indicator LEDs.  The pin is
+// put HIGH while the strike is open to indicate the credentials were
+// accepted.  Must be an array initializer of length NUM_DOORS.  
+// Specify 255 to disable the feature for a strike index.
+#define DOOR_ACCEPTED_LED_PINS {2, 3}
+
+// Output pins connected to "access denied" indicator LEDs.  The pin is
+// put HIGH while the strike is open to indicate the credentials were
+// rejected.  Must be an array initializer of length NUM_DOORS.  
+// Specify 255 to disable the feature for a strike index.
+#define DOOR_DENIED_LED_PINS {4, 5}
 
 //////////////////////////////////////////////////////////////////////////////
 // Misc Hardware
