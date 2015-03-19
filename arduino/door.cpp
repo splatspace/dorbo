@@ -12,12 +12,9 @@ struct interval {
   // The millis value that defines the (open; inclusive) start of the interval
   uint32_t start;
   // The duration in ms that is added to the start to calculate the 
-  // (closed; exclusive) end of the interval.
+  // (closed; exclusive) end of the interval.  Must be less than (2^31)-1.
   uint32_t duration;
 };
-
-// Roll-over safe
-#define INTERVAL_CONTAINS(i,ms) ((ms) - (i).start <= (i).duration)
 
 static struct interval hold_open[NUM_DOORS];
 
@@ -70,7 +67,20 @@ void door_open(byte door_num) {
 }
 
 boolean door_is_open(byte door_num) {
-  return INTERVAL_CONTAINS(hold_open[door_num], millis());
+  unsigned long now = millis();
+  
+  // Using subtraction yields a signed value that can always be compared with 
+  // duration (which is range limited for this case).
+  boolean open = (now - hold_open[door_num].start) < hold_open[door_num].duration;
+
+  // Reset the interval as soon as we detect a "closed" state so it won't match
+  // as open after ~49 days from now (the clock having rolled over and millis() 
+  // repeating "now").
+  if (!open && hold_open[door_num].duration != 0) {
+    hold_open[door_num].start = 0;
+    hold_open[door_num].duration = 0;
+  }  
+  return open;
 }
 
 
