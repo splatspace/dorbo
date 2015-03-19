@@ -1,6 +1,7 @@
 #include "cli.h"
 #include "wiegand.h"
 #include "storage.h"
+#include "door.h"
 
 //////////////////////////////////////////////////////////////////////////////
 // Command Line Interface Syntax
@@ -63,12 +64,18 @@
 // Output: 
 //
 // "w26 <max-w26-credentials>"
+//////////////////////////////////////////////////////////////////////////////
+//
+// Open Doors
+//
+// "o <door_num>"
 
 #define CMD_READ       "r"
 #define CMD_WRITE      "w"
 #define CMD_LIST       "l"
 #define CMD_CLEAR      "x"
 #define CMD_INFO       "i"
+#define CMD_OPEN       "o"
 #define CMD_HELP       "h"
 #define CMD_HELP2      "help"
 
@@ -124,6 +131,8 @@ static const char * e_invalid_facility = "missing facility";
 static const char * e_missing_facility = "invalid facility";
 static const char * e_invalid_user = "missing user";
 static const char * e_missing_user = "invalid user";
+static const char * e_missing_door = "missing door";
+static const char * e_invalid_door = "invalid door";
 
 //////////////////////////////////////////////////////////////////////////////
 // Read
@@ -357,6 +366,31 @@ boolean exec_info(char * tok) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+// Open
+//////////////////////////////////////////////////////////////////////////////
+
+boolean exec_open(char * tok) {
+  char * arg;
+  
+  // Parse door num
+  arg = strtok_r(NULL, " ", &tok);
+  if (arg == NULL) {
+    Serial.println(e_missing_door);
+    return false;
+  }
+  byte door_num = atoi(arg);
+  if (door_num < 0 || door_num >= NUM_DOORS) {
+    Serial.println(e_invalid_door);
+    return false;
+  }
+  
+  door_open(door_num);
+  
+  return true;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
 // Help
 //////////////////////////////////////////////////////////////////////////////
 
@@ -366,6 +400,7 @@ boolean exec_help(char * tok) {
   Serial.println("r type idx");
   Serial.println("w type idx n...");
   Serial.println("x type");
+  Serial.println("o door");
   Serial.print("types: ");
   Serial.println(CRED_NAME_WIEGAND_26);
   return true;
@@ -391,6 +426,8 @@ void process_command() {
     ok = exec_clear(tok);
   } else if (strcmp(command_name, CMD_INFO) == 0) {
     ok = exec_info(tok);
+  } else if (strcmp(command_name, CMD_OPEN) == 0) {
+    ok = exec_open(tok);
   } else if (strcmp(command_name, CMD_HELP) == 0 
     || strcmp(command_name, CMD_HELP2) == 0) {
     ok = exec_help(tok);

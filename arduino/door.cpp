@@ -66,21 +66,26 @@ void door_open(byte door_num) {
   hold_open[door_num].duration = strike_open_periods[door_num];
 }
 
-boolean door_is_open(byte door_num) {
-  unsigned long now = millis();
-  
-  // Using subtraction yields a signed value that can always be compared with 
+long door_open_remaining(byte door_num) {
+  // Subtraction yields a signed value that can always be compared with 
   // duration (which is range limited for this case).
-  boolean open = (now - hold_open[door_num].start) < hold_open[door_num].duration;
-
-  // Reset the interval as soon as we detect a "closed" state so it won't match
+  long open_ms = millis() - hold_open[door_num].start;
+  
+  long remaining = hold_open[door_num].duration - open_ms;
+  if (remaining < 0) {
+    remaining = 0;
+  }
+  
+  // Reset the interval when we detect a "closed" state so it won't match
   // as open after ~49 days from now (the clock having rolled over and millis() 
-  // repeating "now").
-  if (!open && hold_open[door_num].duration != 0) {
+  // repeats the same "now").
+  if (remaining == 0) {
     hold_open[door_num].start = 0;
     hold_open[door_num].duration = 0;
   }  
-  return open;
+  return remaining;
 }
 
-
+boolean door_is_open(byte door_num) {
+  return door_open_remaining(door_num) > 0;
+}
