@@ -12,8 +12,9 @@ struct interval {
   // The millis value that defines the (open; inclusive) start of the interval
   uint32_t start;
   // The duration in ms that is added to the start to calculate the 
-  // (closed; exclusive) end of the interval.  Must be less than (2^31)-1.
-  uint32_t duration;
+  // (closed; exclusive) end of the interval.  Must be >= 0 (0 specifies an empty 
+  // interval).
+  int32_t duration;
 };
 
 static struct interval hold_open[NUM_DOORS];
@@ -61,31 +62,34 @@ void door_open(byte door_num) {
   if (door_num >= NUM_DOORS) {
     return;
   }
-  
   hold_open[door_num].start = millis();
   hold_open[door_num].duration = strike_open_periods[door_num];
 }
 
-long door_open_remaining(byte door_num) {
-  // Subtraction yields a signed value that can always be compared with 
-  // duration (which is range limited for this case).
-  long open_ms = millis() - hold_open[door_num].start;
-  
-  long remaining = hold_open[door_num].duration - open_ms;
-  if (remaining < 0) {
-    remaining = 0;
+uint32_t door_open_remaining_ms(byte door_num) {
+  int32_t duration = hold_open[door_num].duration;
+  if (duration == 0) {
+    return 0;
   }
   
-  // Reset the interval when we detect a "closed" state so it won't match
-  // as open after ~49 days from now (the clock having rolled over and millis() 
-  // repeats the same "now").
-  if (remaining == 0) {
-    hold_open[door_num].start = 0;
+  // When adding duration to start would overflow the unsigned integer, 
+  // millis() would also overflow (roll-over) in the same fashion, so this 
+  // yields the correct stop time.  After that, subtracting the unsigned millis()
+  // value from the stop time yields the correct (signed) difference.
+  int32_t remaining = (hold_open[door_num].start + duration) - millis();
+
+  if (remaining <= 0) {
+    // No time remaining.  Reset the duration to 0 so it can't match until we 
+    // explicitly open it again.  If we left it as-is, now() will repeat
+    // ~49 days later and the door would open.
     hold_open[door_num].duration = 0;
-  }  
-  return remaining;
+    return 0;
+  } else {
+    // Will always be a positive value
+    return remaining;
+  }
 }
 
 boolean door_is_open(byte door_num) {
-  return door_open_remaining(door_num) > 0;
+  return door_open_remaining_ms(door_num) > 0;
 }

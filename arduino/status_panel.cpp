@@ -46,12 +46,10 @@ void status_panel_loop() {
     num_printed += lcd.print(i);
     num_printed += lcd.print(':');
     
-    long ms_remaining = door_open_remaining(i);
-    
+    long ms_remaining = door_open_remaining_ms(i);
     if (ms_remaining > 0) {
-      
       num_printed += lcd.print("open ");
-      num_printed += lcd.print(ms_remaining);
+      num_printed += lcd.print(ms_remaining / 1000);
     } else {
       num_printed += lcd.print("closed");
     }
@@ -62,9 +60,6 @@ void status_panel_loop() {
     }
   }
   
-  //lcd.setCursor(7, 0);
-  //lcd.print(now / 1000);
-
   // The lowest 10 bits of the total millis encode 1024 ms, which is close enough to 
   // 1 second for heartbeat purposes.  Accurate division is very slow on the AVR, 
   // so this is a good trade-off.
