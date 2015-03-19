@@ -39,6 +39,8 @@ void status_panel_init() {
 }
 
 void status_panel_loop() {
+  unsigned long now = millis();
+  
   for (byte i = 0; i < NUM_DOORS; i++) {
     byte num_printed = 0;
     
@@ -66,6 +68,6 @@ void status_panel_loop() {
 
   // Light the LED for 256 of the 1024 ms in our period.
   lcd.setCursor(15, 1);
-  lcd.write((byte) ((millis() & 0x3ff) < 256 ? CLOSED_HEART : OPEN_HEART));
+  lcd.write((byte) ((now & 0x3ff) < 256 ? CLOSED_HEART : OPEN_HEART));
 }
 
