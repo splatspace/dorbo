@@ -11,7 +11,6 @@
 #include "door.h"
 #include "status_panel.h"
 #include "dorbo_utils.h"
-#include "time.h"
 #include "cli.h"
 
 // For testing millis() rollover.
@@ -20,9 +19,6 @@ extern volatile unsigned long timer0_millis;
 void setup() {
   Serial.begin(115200);
 
-  time_init();
-  PL("time initialized");
-  
   status_panel_init();
   PL("status panel initialized");
   
@@ -40,10 +36,6 @@ void setup() {
 }
 
 void loop() {
-  // We must service the time loop first so loop_time is available later
-  // in the loop.
-  time_loop();
-
   status_panel_loop();
   door_loop();
   cli_loop();

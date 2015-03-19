@@ -2,7 +2,6 @@
 
 #include "wiegand.h"
 #include "dorbo_utils.h"
-#include "time.h"
 
 // Define the PCI enablement and mask registers for the chosen port.
 #if defined(WIEGAND_PORTB)

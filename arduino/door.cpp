@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "door.h"
-#include "time.h"
 
 // Declared and defined by config.h
 static byte strike_pins[NUM_DOORS] = DOOR_STRIKE_PINS;
@@ -8,12 +7,25 @@ static byte accepted_led_pins[NUM_DOORS] = DOOR_ACCEPTED_LED_PINS;
 static byte denied_led_pins[NUM_DOORS] = DOOR_DENIED_LED_PINS;
 static unsigned int strike_open_periods[NUM_DOORS] = DOOR_STRIKE_OPEN_PERIODS;
 
-static struct time close_at[NUM_DOORS];
+// A half-open interval used for holding strikes open.
+struct interval {
+  // The millis value that defines the (open; inclusive) start of the interval
+  uint32_t start;
+  // The duration in ms that is added to the start to calculate the 
+  // (closed; exclusive) end of the interval.
+  uint32_t duration;
+};
+
+// Roll-over safe
+#define INTERVAL_CONTAINS(i,ms) ((ms) - (i).start <= (i).duration)
+
+static struct interval hold_open[NUM_DOORS];
 
 void door_init(void) {
   for (byte i = 0; i < NUM_DOORS; i++) {
-    // Initialize the time to 0 so the doors are initially closed
-    time_epoch(&close_at[i]);
+    // Initialize the intervals so the doors are initially closed
+    hold_open[i].start = 0;
+    hold_open[i].duration = 0;
 
     // LOW is strike closed (door locked), HIGH is strike open (door unlocked)
     pinMode(strike_pins[i], OUTPUT);
@@ -34,15 +46,14 @@ void door_init(void) {
 }
 
 void door_loop() {
+  unsigned long now = millis();
   for (byte i = 0; i < NUM_DOORS; i++) {
     boolean open = door_is_open(i);
 
     digitalWrite(strike_pins[i], open ? HIGH : LOW);
-
     if (accepted_led_pins[i] != 255) {
       digitalWrite(accepted_led_pins[i], open ? HIGH : LOW);
     }
-
     if (denied_led_pins[i] != 255) {
       digitalWrite(denied_led_pins[i], open ? HIGH : LOW);
     }
@@ -54,15 +65,12 @@ void door_open(byte door_num) {
     return;
   }
   
-  // Copy the current loop time in
-  TIME_CP(close_at[door_num], loop_time);
-  
-  // Add the configured open time
-  time_add(&close_at[door_num], strike_open_periods[door_num]);
+  hold_open[door_num].start = millis();
+  hold_open[door_num].duration = strike_open_periods[door_num];
 }
 
 boolean door_is_open(byte door_num) {
-  return TIME_LT_TIME(loop_time, close_at[door_num]);
+  return INTERVAL_CONTAINS(hold_open[door_num], millis());
 }
 
 

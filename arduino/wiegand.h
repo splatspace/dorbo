@@ -8,7 +8,6 @@
 
 #include "config.h"
 #include "dorbo_utils.h"
-#include "time.h"
 
 void wiegand_readers_init();
 
