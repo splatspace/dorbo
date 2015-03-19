@@ -35,7 +35,7 @@ void door_init(void) {
 
 void door_loop() {
   for (byte i = 0; i < NUM_DOORS; i++) {
-    boolean open = TIME_LT_TIME(loop_time, close_at[i]);
+    boolean open = door_is_open(i);
 
     digitalWrite(strike_pins[i], open ? HIGH : LOW);
 
@@ -60,4 +60,9 @@ void door_open(byte door_num) {
   // Add the configured open time
   time_add(&close_at[door_num], strike_open_periods[door_num]);
 }
+
+boolean door_is_open(byte door_num) {
+  return TIME_LT_TIME(loop_time, close_at[door_num]);
+}
+
 

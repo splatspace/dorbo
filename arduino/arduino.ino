@@ -2,13 +2,14 @@
 // (libraries cannot be included from other header files in the sketch).  If this
 // bug is ever fixed, you can remove these duplicate includes.
 #include <EEPROM.h>
+#include <LiquidCrystal.h>
 // End duplicate libray includes.
  
 #include "config.h"
 #include "storage.h"
 #include "wiegand.h"
 #include "door.h"
-#include "status_led.h"
+#include "status_panel.h"
 #include "dorbo_utils.h"
 #include "time.h"
 #include "cli.h"
@@ -22,8 +23,8 @@ void setup() {
   time_init();
   PL("time initialized");
   
-  status_led_init();
-  PL("status LED initialized");
+  status_panel_init();
+  PL("status panel initialized");
   
   door_init();
   PL("doors initialized");
@@ -43,7 +44,7 @@ void loop() {
   // in the loop.
   time_loop();
 
-  status_led_loop();
+  status_panel_loop();
   door_loop();
   cli_loop();
 

@@ -80,7 +80,7 @@
 
 // How many milliseconds to hold the strike open.  Must be an array 
 // initializer of length NUM_DOORS.
-#define DOOR_STRIKE_OPEN_PERIODS {3000, 3000}
+#define DOOR_STRIKE_OPEN_PERIODS {5000, 5000}
 
 // Output pins connected to "access granted" indicator LEDs.  The pin is
 // put HIGH while the strike is open to indicate the credentials were
@@ -95,11 +95,17 @@
 #define DOOR_DENIED_LED_PINS {4, 5}
 
 //////////////////////////////////////////////////////////////////////////////
-// Misc Hardware
+// Status LED Panel
 //////////////////////////////////////////////////////////////////////////////
 
-// Blink a heartbeat on this pin so we know the controller loop is active.
-#define STATUS_LED_PIN  13
+// The LiquidCrystal constructor args for the pins connected to the
+// ACM1602B LED module.
+//
+// LiquidCrystal(rs, enable, d4, d5, d6, d7)
+// LiquidCrystal(rs, rw, enable, d4, d5, d6, d7)
+// LiquidCrystal(rs, enable, d0, d1, d2, d3, d4, d5, d6, d7)
+// LiquidCrystal(rs, rw, enable, d0, d1, d2, d3, d4, d5, d6, d7) 
+#define STATUS_PANEL_LIQUID_CRYSTAL_CONST_ARGS 15, 14, A0, A1, A2, A3
 
 #endif
 
