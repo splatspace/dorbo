@@ -18,7 +18,7 @@ void wiegand_readers_init();
 
 // 24-bit Wiegand (26-bits on-the-wire includes 2 parity bits) as used by 
 // HID Prox and many other devices.  Packed for storage in EEPROM.
-__attribute__((packed)) struct wiegand26_credential {
+struct __attribute__((packed)) wiegand26_credential {
   uint8_t facility;
   uint16_t user;
 };
