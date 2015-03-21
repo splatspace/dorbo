@@ -32,7 +32,7 @@ void setup() {
   PL("cli initialized");
   
   // For testing millis() rollover.
-  timer0_millis = -5000;
+  //timer0_millis = -5000;
 }
 
 void loop() {
