@@ -23,7 +23,7 @@ struct interval {
 // The difference of the end with t is the remaining duration.  When t <= end, 
 // the subtraction does not underflow and the result is always <= duration.  
 // When t > end underflow causes the result to be > duration.
-#define INTERVAL_REMAINING(i,t) ((i).start + (i).duration) - (t)
+#define INTERVAL_REMAINING(i,t) (((i).start + (i).duration) - (t))
   
 inline uint32_t open_closed_interval_remaining(struct interval * i, uint32_t t) {
   uint32_t remaining = INTERVAL_REMAINING(*i, t);
