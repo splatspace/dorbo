@@ -5,9 +5,9 @@
 // or half-open interval.
 //
 // Rules:
-// - An open or half-open interval with a duration of 0 specifies an instant
-// - A closed interval with a duration of 0 is empty (contains no millis)
-// - A negative duration describes an empty interval for all interval types
+// - An open interval with a duration of 0 specifies an instant
+// - A half-open or closed interval with a duration of 0 is empty (contains no 
+//   millis)
 struct interval {
   // The millis value that defines the start of the interval
   uint32_t start;
@@ -28,10 +28,12 @@ struct interval {
 inline uint32_t open_closed_interval_remaining(struct interval * i, uint32_t t) {
   uint32_t remaining = INTERVAL_REMAINING(*i, t);
   if (remaining <= i->duration) {
-    // At the start of the interval, or inside it, but not yet at the end
+    // remaining == duration at the (open) start of the interval
+    // remaining < duration when inside the interval
     return remaining;
   } else {
-    // At the end or outside the interval
+    // remaining == 0 when at the (closed) end of the interval
+    // remaining > duration when outside the interval
     return 0;
   }
 }
