@@ -3,31 +3,13 @@
 #include "wiegand.h"
 #include "dorbo_utils.h"
 
-// Define the PCI enablement and mask registers for the chosen port.
-#if defined(WIEGAND_PORTB)
-# define PORT_PCI_REG   PCIE0
-# define PORT_MSK_REG   PCMSK0
-# define PORT_PCI_VECT  PCINT0_vect
-# define PORT_PINS_REG  PINB
-#elif defined(WIEGAND_PORTC)
-# define PORT_PCI_REG   PCIE1
-# define PORT_MSK_REG   PCMSK1
-# define PORT_PCI_VECT  PCINT1_vect
-# define PORT_PINS_REG  PINC
-#elif defined(WIEGAND_PORTD)
-# define PORT_PCI_REG   PCIE2
-# define PORT_MSK_REG   PCMSK2
-# define PORT_PCI_VECT  PCINT2_vect
-# define PORT_PINS_REG  PIND
-#endif
-
 struct wiegand_reader {
-  byte zero_pin;
-  byte one_pin;
+  // DATA0 and DATA 1 pins for the ISR to poll
+  byte data_pins[2];
   
-  // PCI masks (one bit set for the pin address within the port)
-  byte zero_pin_mask;
-  byte one_pin_mask;
+  // DATA0 and DATA1 values as of the last interrupt.
+  // Accessed only in ISRs so does not require an atomic block
+  volatile byte previous_pin_values[2];
   
   // The following volatile fields must be accessed in an ATOMIC_BLOCK()
   
@@ -40,52 +22,9 @@ struct wiegand_reader {
 };
 
 static byte wiegand_reader_pins[NUM_WIEGAND_READERS][2] = WIEGAND_READER_PINS;
+static byte wiegand_reader_ints[NUM_WIEGAND_READERS][2] = WIEGAND_READER_INTS;
 
 static struct wiegand_reader wiegand_readers[NUM_WIEGAND_READERS];
-
-// The PCI ISR stashes the pins here to compare next time
-static volatile byte previous_port_pins = 0;
-
-void wiegand_readers_init(void) {
-  byte port_pin_mask = 0;
-  for (byte i = 0; i < NUM_WIEGAND_READERS; i++) {
-    // Initialize all fields
-    wiegand_readers[i].zero_pin = wiegand_reader_pins[i][0];
-    wiegand_readers[i].one_pin = wiegand_reader_pins[i][1];
-    wiegand_readers[i].count = 0;
-    wiegand_readers[i].bits = 0;
-    wiegand_readers[i].last_changed = millis();
-
-    // Define the pins as inputs and enable the internal pull-up resistors.
-    pinMode(wiegand_readers[i].zero_pin, INPUT_PULLUP);
-    pinMode(wiegand_readers[i].one_pin, INPUT_PULLUP);
-
-    // Map pins to the correct bits for the PCI ISR mask.
-    wiegand_readers[i].zero_pin_mask = digitalPinToBitMask(wiegand_readers[i].zero_pin);
-    wiegand_readers[i].one_pin_mask = digitalPinToBitMask(wiegand_readers[i].one_pin);
-    
-    port_pin_mask |= wiegand_readers[i].zero_pin_mask;
-    port_pin_mask |= wiegand_readers[i].one_pin_mask;
-  }
-  
-  // Enable pin change interrupts (PCI) on the port.
-  sbi(PCICR, PORT_PCI_REG);
-
-  // Set the mask to include all the declared pin masks
-  PORT_MSK_REG |= port_pin_mask;
-
-  // The idle state of the Wiegand data lines is HIGH (+5 volts), and the reader 
-  // pulls the line LOW to signal 1 bit of credential data.  With the internal 
-  // pull-up resistors active the pins read HIGH when the reader is idle (the 
-  // circuit is open and current is flowing across the internal resistor) and the 
-  // pins read LOW when the reader is signaling data (the reader closes the circuit
-  // and allows current to flow to ground through the pin).
-  //
-  // Initialize the previous port pins to the "idle reader" state, which is each
-  // pin HIGH, so we can correctly detect the first credential read.  The pin mask 
-  // conveniently indicates which pins would be set in this state.
-  previous_port_pins = port_pin_mask;
-}
 
 boolean wiegand_reader_get_wiegand26(byte reader_num, struct wiegand26_credential * cred) {
   struct wiegand_reader * reader = &wiegand_readers[reader_num];
@@ -125,7 +64,7 @@ boolean wiegand_reader_get_wiegand26(byte reader_num, struct wiegand26_credentia
 
 // Typical Wiegand pulse period is 1 millisecond (with a pulse width of 
 // 50 microseconds).  The ISR must complete before the next pulse comes.
-ISR(PORT_PCI_VECT) {
+void handle_interrupt() {
   for (byte i = 0; i < NUM_WIEGAND_READERS; i++) {
     struct wiegand_reader * reader = &wiegand_readers[i];
 
@@ -151,26 +90,58 @@ ISR(PORT_PCI_VECT) {
     }
       
     // When the "zero" pin changes to LOW the device is sending us a 0
-    if (reader->count < 26
-        && (PORT_PINS_REG & reader->zero_pin_mask) != (previous_port_pins & reader->zero_pin_mask)
-        && (PORT_PINS_REG & reader->zero_pin_mask) == reader->zero_pin_mask) {
+    byte zero_pin_value = digitalRead(reader->data_pins[0]);
+    if (reader->count < 26 && zero_pin_value == LOW && reader->previous_pin_values[0] == HIGH) {
       // Shift in a 0
       reader->count += 1;
       reader->bits <<= 1;
       reader->last_changed = millis();
     }
+    reader->previous_pin_values[0] = zero_pin_value;
     
     // When the "one" pin changes to LOW the device is sending us a 1
-    if (reader->count < 26
-        && (PORT_PINS_REG & reader->one_pin_mask) != (previous_port_pins & reader->one_pin_mask) 
-        && (PORT_PINS_REG & reader->one_pin_mask) == reader->one_pin_mask) {
+    byte one_pin_value = digitalRead(reader->data_pins[1]);
+    if (reader->count < 26 && one_pin_value == LOW && reader->previous_pin_values[1] == HIGH) {
       // Shift and add a 1
       reader->count += 1;
       reader->bits <<= 1;
       reader->bits |= 1;
       reader->last_changed = millis();
     }  
+    reader->previous_pin_values[1] = one_pin_value;
   }
-  previous_port_pins = PORT_PINS_REG;
+}
+
+void wiegand_readers_init(void) {
+  byte port_pin_mask = 0;
+  for (byte i = 0; i < NUM_WIEGAND_READERS; i++) {
+    struct wiegand_reader * reader = &wiegand_readers[i];
+    
+    // Initialize all fields
+    reader->count = 0;
+    reader->bits = 0;
+    reader->last_changed = millis();
+    
+    // DATA0 and DATA1 fields
+    for (int j = 0; j < 2; j++) {
+      // Define the data pin as an input and enable the internal pull-up resistors.
+      reader->data_pins[j] = wiegand_reader_pins[i][j];
+      pinMode(reader->data_pins[j], INPUT_PULLUP);
+  
+      // The idle state of the Wiegand data lines is HIGH (+5 volts), and the reader 
+      // pulls the line LOW to signal 1 bit of credential data.  With the internal 
+      // pull-up resistors active the pins read HIGH when the reader is idle (the 
+      // circuit is open and current is flowing across the internal resistor) and the 
+      // pins read LOW when the reader is signaling data (the reader closes the circuit
+      // and allows current to flow to ground through the pin).
+      //
+      // Initialize the previous port pins to the "idle reader" state, which is each
+      // pin HIGH, so we can correctly detect the first credential read.
+      reader->previous_pin_values[j] = HIGH;
+  
+      // Attach the declared interrupt to the generic handler
+      attachInterrupt(wiegand_reader_ints[i][j], handle_interrupt, CHANGE);
+    }
+  }
 }
 

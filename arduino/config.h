@@ -25,25 +25,15 @@
 // port on the microcontroller.
 #define NUM_WIEGAND_READERS 2
 
-// Enable one WIEGAND_PORT_n constant for the IO port that contains all the 
-// pins your Wiegand readers are connected to.  The reader code enables Pin 
-// Change Interrupt (PCI) handling on the specified port, but leaves the other 
-// ports alone (so they can be used for other features that may not want to 
-// use PCI).
-//
-// On the ATmega328 the IO ports are arranged like:
-//   PORTB contains digital pin 8 to 13
-//   PORTC contains analog input pins 0 to 5
-//   PORTD contains digital pins 0 to 7
-#define WIEGAND_PORTB
-//#define WIEGAND_PORTC
-//#define WIEGAND_PORTD
-
-// Pins connected to readers.  All pins must be inside the IO port you 
-// defined.  Must be an array initializer of two dimensions
+// Pins connected to readers.  All pins must be capable of triggering
+// external interrupts.  Must be an array initializer of two dimensions
 // [NUM_WIEGAND_READERS][2] where the inner dimension defines 
 // {DATA_0_PIN, DATA_1_PIN}.
-#define WIEGAND_READER_PINS {{8, 9}, {10, 11}}
+#define WIEGAND_READER_PINS {{0, 1},       {2, 3}}
+
+// Interrupts to hook for pins defined at WIEGAND_READER_PINS.  Must
+// be an array initializer of the same size.
+#define WIEGAND_READER_INTS {{INT3, INT2}, {INT1, INT0}}
 
 // Abort the read and reset for a new value if reader input lines are idle 
 // for this many milliseconds).  Prevents noise from accumulating and 
