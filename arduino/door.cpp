@@ -4,8 +4,7 @@
 
 // Declared and defined by config.h
 static byte strike_pins[NUM_DOORS] = DOOR_STRIKE_PINS;
-static byte accepted_led_pins[NUM_DOORS] = DOOR_ACCEPTED_LED_PINS;
-static byte denied_led_pins[NUM_DOORS] = DOOR_DENIED_LED_PINS;
+static byte accepted_led_pins[NUM_DOORS][2] = DOOR_ACCEPTED_LED_PINS;
 static unsigned int strike_open_periods[NUM_DOORS] = DOOR_STRIKE_OPEN_PERIODS;
 
 // Half-open intervals (start is open, end is closed)
@@ -21,16 +20,11 @@ void door_init(void) {
     pinMode(strike_pins[i], OUTPUT);
     digitalWrite(strike_pins[i], LOW);
     
-    // LOW is LED off, HIGH is LED on
-    if (accepted_led_pins[i] != 255) {
-      pinMode(accepted_led_pins[i], OUTPUT);
-      digitalWrite(accepted_led_pins[i], LOW);
-    }
-    
-    // LOW is LED off, HIGH is LED on
-    if (denied_led_pins[i] != 255) {
-      pinMode(denied_led_pins[i], OUTPUT);
-      digitalWrite(denied_led_pins[i], LOW);
+    byte led_pin = accepted_led_pins[i][0];
+    byte enabled_state = accepted_led_pins[i][1];
+    if (led_pin != 255) {
+      pinMode(led_pin, OUTPUT);
+      digitalWrite(led_pin, !enabled_state);
     }
   }
 }
@@ -41,11 +35,11 @@ void door_loop() {
     boolean open = door_open_remaining_ms(i) > 0;
 
     digitalWrite(strike_pins[i], open ? HIGH : LOW);
-    if (accepted_led_pins[i] != 255) {
-      digitalWrite(accepted_led_pins[i], open ? HIGH : LOW);
-    }
-    if (denied_led_pins[i] != 255) {
-      digitalWrite(denied_led_pins[i], open ? HIGH : LOW);
+
+    byte led_pin = accepted_led_pins[i][0];
+    byte enabled_state = accepted_led_pins[i][1];
+    if (led_pin != 255) {
+      digitalWrite(led_pin, open ? enabled_state : !enabled_state);
     }
   }
 }

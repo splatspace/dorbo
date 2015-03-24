@@ -29,11 +29,11 @@
 // external interrupts.  Must be an array initializer of two dimensions
 // [NUM_WIEGAND_READERS][2] where the inner dimension defines 
 // {DATA_0_PIN, DATA_1_PIN}.
-#define WIEGAND_READER_PINS {{0, 1},       {2, 3}}
+#define WIEGAND_READER_PINS {{1, 0},       {2, 3}}
 
 // Interrupts to hook for pins defined at WIEGAND_READER_PINS.  Must
 // be an array initializer of the same size.
-#define WIEGAND_READER_INTS {{INT3, INT2}, {INT1, INT0}}
+#define WIEGAND_READER_INTS {{INT2, INT3}, {INT1, INT0}}
 
 // Abort the read and reset for a new value if reader input lines are idle 
 // for this many milliseconds).  Prevents noise from accumulating and 
@@ -66,23 +66,19 @@
 
 // Output pins connected to strikes.  Must be an array initializer of 
 // length NUM_DOORS.
-#define DOOR_STRIKE_PINS {6, 7}
+#define DOOR_STRIKE_PINS {8, 9}
 
 // How many milliseconds to hold the strike open.  Must be an array 
 // initializer of length NUM_DOORS.
 #define DOOR_STRIKE_OPEN_PERIODS {5000, 5000}
 
-// Output pins connected to "access granted" indicator LEDs.  The pin is
-// put HIGH while the strike is open to indicate the credentials were
-// accepted.  Must be an array initializer of length NUM_DOORS.  
-// Specify 255 to disable the feature for a strike index.
-#define DOOR_ACCEPTED_LED_PINS {2, 3}
-
-// Output pins connected to "access denied" indicator LEDs.  The pin is
-// put HIGH while the strike is open to indicate the credentials were
-// rejected.  Must be an array initializer of length NUM_DOORS.  
-// Specify 255 to disable the feature for a strike index.
-#define DOOR_DENIED_LED_PINS {4, 5}
+// Output pins connected to "access granted" indicator LEDs.  Must be an 
+// array initializer of length NUM_DOORs, each item is an array of 
+// {pin, enabled_state} where enabled_state specifies the state (HIGH or LOW) 
+// that the pin is set to to indicate success (reader devices differ in 
+// their conventions).  Pin 255 specifies no indicator LED is present for 
+// that door.
+#define DOOR_ACCEPTED_LED_PINS   {{4, LOW}, {5, LOW}}
 
 //////////////////////////////////////////////////////////////////////////////
 // Status LED Panel
@@ -95,7 +91,7 @@
 // LiquidCrystal(rs, rw, enable, d4, d5, d6, d7)
 // LiquidCrystal(rs, enable, d0, d1, d2, d3, d4, d5, d6, d7)
 // LiquidCrystal(rs, rw, enable, d0, d1, d2, d3, d4, d5, d6, d7) 
-#define STATUS_PANEL_LIQUID_CRYSTAL_CONST_ARGS 15, 14, A0, A1, A2, A3
+#define STATUS_PANEL_LIQUID_CRYSTAL_CONST_ARGS A3, A2, A1, A0, 15, 14
 
 #endif
 
