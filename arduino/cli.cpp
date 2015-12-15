@@ -119,6 +119,10 @@ uint16_t parse_uint16(char * str, uint16_t * dest) {
   return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+// Error Strings
+//////////////////////////////////////////////////////////////////////////////
+
 static const char * e_invalid_command = "invalid command";
 static const char * e_missing_type = "missing type";
 static const char * e_invalid_type = "invalid type";
@@ -455,16 +459,17 @@ void cli_loop() {
   while (Serial && Serial.available()) {
     char c = Serial.read();
     
-    if (c != '\n' && command_index < sizeof(command)) {
+    if (c != '\r' && c != '\n' && command_index < sizeof(command)) {
       command[command_index++] = c;
       continue;
     }
     
-    if (c == '\n') {
+    if (c == '\r' || c == '\n') {
       command[command_index] = 0;
       process_command();
     } else {
-      Serial.println("error: loader command too long");
+      Serial.println("command too long");
+      Serial.println("err");
     }
   
     clear_command();
