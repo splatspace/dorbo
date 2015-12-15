@@ -22,7 +22,6 @@ struct wiegand_reader {
 };
 
 static byte wiegand_reader_pins[NUM_WIEGAND_READERS][2] = WIEGAND_READER_PINS;
-static byte wiegand_reader_ints[NUM_WIEGAND_READERS][2] = WIEGAND_READER_INTS;
 
 static struct wiegand_reader wiegand_readers[NUM_WIEGAND_READERS];
 
@@ -140,7 +139,7 @@ void wiegand_readers_init(void) {
       reader->previous_pin_values[j] = HIGH;
   
       // Attach the declared interrupt to the generic handler
-      attachInterrupt(wiegand_reader_ints[i][j], handle_interrupt, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(wiegand_reader_pins[i][j]), handle_interrupt, CHANGE);
     }
   }
 }

@@ -6,13 +6,6 @@
 // Enables serial debug output
 #define DEBUG
 
-// Hardware Note
-//
-// Dorbo was developed for a SparkFun Pro Micro (5V).  If you want to run it
-// on another board, you'll probably have to change the way the interrupts
-// are defined below.  Newer Arduino libraries include a digitalPinToInterrupt
-// macro/function that you should use instead of INT0, INT1, INT2, etc.
-
 //////////////////////////////////////////////////////////////////////////////
 // Credential Storage
 //////////////////////////////////////////////////////////////////////////////
@@ -36,10 +29,6 @@
 // [NUM_WIEGAND_READERS][2] where the inner dimension defines 
 // {DATA_0_PIN, DATA_1_PIN}.
 #define WIEGAND_READER_PINS {{1, 0}, {2, 3}}
-
-// Interrupts to hook for pins defined at WIEGAND_READER_PINS.  Must
-// be an array initializer of the same size.
-#define WIEGAND_READER_INTS {{INT2, INT3}, {INT1, INT0}}
 
 // Abort the read and reset for a new value if reader input lines are idle 
 // for this many milliseconds.  Prevents noise from accumulating and 
