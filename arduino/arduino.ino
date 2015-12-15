@@ -1,10 +1,3 @@
-// Arduino IDE requires all library includes to be made from the main sketch file
-// (libraries cannot be included from other header files in the sketch).  If this
-// bug is ever fixed, you can remove these duplicate includes.
-#include <EEPROM.h>
-#include <LiquidCrystal.h>
-// End duplicate libray includes.
- 
 #include "config.h"
 #include "storage.h"
 #include "wiegand.h"
