@@ -112,7 +112,6 @@ void handle_interrupt() {
 }
 
 void wiegand_readers_init(void) {
-  byte port_pin_mask = 0;
   for (byte i = 0; i < NUM_WIEGAND_READERS; i++) {
     struct wiegand_reader * reader = &wiegand_readers[i];
     
