@@ -159,7 +159,7 @@ class AccessController(object):
         # a command terminated by a newline, the command executes, and the
         # controller's response is one or more lines that always ends in a full
         # line of text of "ok" or "err".
-        command_bytes = bytes(command + 'x', SERIAL_ENCODING)
+        command_bytes = bytes(command + '\n', SERIAL_ENCODING)
         self.serial.write(command_bytes)
         self.logger.debug('write: %r', command_bytes)
         self.serial.flush()
