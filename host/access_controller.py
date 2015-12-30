@@ -14,6 +14,20 @@ SERIAL_ENCODING = 'utf8'
 """Encoding used to communicate with the access controller."""
 
 
+class ReadTimeoutError(Exception):
+    """
+    Raised when a response from the access controller was not received in time.
+    """
+    pass
+
+class ProtocolError(Exception):
+    """
+    Raised when the access controller's response violated the expected
+    protocol or could not be understood.
+    """
+    pass
+
+
 class AccessController(object):
     """
     Provides high- and low-level interfaces for communicating with the Dorbo
@@ -57,11 +71,13 @@ class AccessController(object):
         """
         Sets all stored Wiegand-26 credentials to facility 0, user 0.
 
-        :raises ValueError: if there was an error clearing the credentials
+        :raises ProtocolError: if there was an error communicating with the
+            access controller
         """
         success, lines = self.execute('x w26')
         if not success:
-            raise ValueError('Error clearing credentials: %s' % ','.join(lines))
+            raise ProtocolError('Error clearing credentials: %s'
+                                % ','.join(lines))
 
     def list_wiegand26(self):
         """
@@ -70,16 +86,18 @@ class AccessController(object):
         :return: a list of all Wiegand-26 credentials stored in the access
             controller with list indices corresponding to the controller
             storage index
-        :raises ValueError: if there was an error listing the credentials
+        :raises ProtocolError: if there was an error communicating with the
+            access controller
         """
         success, lines = self.execute('l w26')
         if not success:
-            raise ValueError('Error listing credentials: %s' % ','.join(lines))
+            raise ProtocolError('Error listing credentials: %s'
+                                % ','.join(lines))
         credentials = []
         for line in lines:
             fields = line.split()
             if len(fields) != 3:
-                raise ValueError('Got %d fields instead of 3' % len(fields))
+                raise ProtocolError('Got %d fields instead of 3' % len(fields))
             credentials.append(Wiegand26Credential(facility=int(fields[1]),
                                                    user=int(fields[2])))
         return credentials
@@ -90,16 +108,18 @@ class AccessController(object):
 
         :param index: the index of the credential to get
         :return: the Wiegand26Credential
-        :raises ValueError: if there was an error getting the credential
+        :raises ProtocolError: if there was an error communicating with the
+            access controller
         """
         success, lines = self.execute('r w26 %d' % index)
         if not success:
-            raise ValueError('Error getting credentials: %s' % ','.join(lines))
+            raise ProtocolError('Error getting credentials: %s'
+                                % ','.join(lines))
         if len(lines) > 1:
-            raise ValueError('Expected only one response line')
+            raise ProtocolError('Expected only one response line')
         fields = lines[0].split()
         if len(fields) != 3:
-            raise ValueError('Got %d fields instead of 3' % len(fields))
+            raise ProtocolError('Got %d fields instead of 3' % len(fields))
         return Wiegand26Credential(facility=int(fields[1]), user=int(fields[2]))
 
     def set_wiegand26(self, index, wiegand26_credential):
@@ -108,44 +128,50 @@ class AccessController(object):
 
         :param index: the index of the credential to set
         :param wiegand26_credential: the credential data to set
-        :raises ValueError: if there was an error getting the credential
+        :raises ProtocolError: if there was an error communicating with the
+            access controller
         """
         success, lines = self.execute('w w26 %d %d %d'
                                       % (index, wiegand26_credential.facility,
                                          wiegand26_credential.user))
         if not success:
-            raise ValueError('Error setting credentials: %s' % ','.join(lines))
+            raise ProtocolError('Error setting credentials: %s'
+                                % ','.join(lines))
 
     def execute(self, command):
         """
         Executes the command on the access controller.
 
         :param command: the command as a string
-        :return: a tuple of (True, [result_lines]) when the command was successful, or
-            (False, [result_lines]) if the command failed.
+        :return: a tuple of (True, [result_lines]) when the command was
+            successful, or (False, [result_lines]) if the command failed
+        :raises ReadTimeoutError: if the command was not acknowledged in time
         """
         assert self.serial, 'can only execute inside a context manager'
 
         # Consume the text prompt or any left-overs from previous commands
         while self.serial.inWaiting() > 0:
             junk = self.serial.read()
-            self.logger.debug('discarding junk: %s', junk.strip())
+            self.logger.debug('discarding pre-execution junk: %s', junk.strip())
 
-        # Communication with the access controller uses very simple flow control that's
-        # human friendly for manual debugging.  The host sends a command terminated
-        # by a newline, the command executes, and the Arduino's response is one
-        # or more lines that always ends in a full line of text of "ok" or "err".
-        self.serial.write(bytes(command + '\n', SERIAL_ENCODING))
-        self.logger.debug('write line: %s', command)
+        # Communication with the access controller uses very simple flow
+        # control that's human friendly for manual debugging.  The host sends
+        # a command terminated by a newline, the command executes, and the
+        # controller's response is one or more lines that always ends in a full
+        # line of text of "ok" or "err".
+        command_bytes = bytes(command + 'x', SERIAL_ENCODING)
+        self.serial.write(command_bytes)
+        self.logger.debug('write: %r', command_bytes)
         self.serial.flush()
 
         result_lines = []
         while True:
-            line = str(self.serial.readline(), SERIAL_ENCODING)
-            self.logger.debug('read line: %s', line.strip())
+            line_bytes = self.serial.readline()
+            self.logger.debug('read: %r', line_bytes)
+            line = str(line_bytes, SERIAL_ENCODING)
             if not line:
-                self.logger.debug('timeout waiting for ok ("%s")', command)
-                return False
+                self.logger.debug('timeout waiting for line: %r)', command_bytes)
+                raise ReadTimeoutError('Timeout waiting for line: %s' % command)
 
             line = line.strip()
             if line == 'ok':
@@ -172,10 +198,18 @@ class AccessController(object):
             for attempt in range(tries):
                 self.logger.debug('handshake attempt')
                 # An empty command should elicit an "ok" response
-                if self.execute(''):
-                    self.logger.debug('handshake success')
-                    return True
-                self.logger.debug('handshake timeout')
+                try:
+                    success, lines = self.execute('')
+                    if success:
+                        self.logger.debug('handshake success')
+                        return True
+                    else:
+                        # Must have been some left-over 'err' response from
+                        # a previous command.  Keep trying.
+                        self.logger.debug('handshake error')
+                        pass
+                except ReadTimeoutError:
+                    self.logger.debug('handshake timeout')
             return False
         finally:
             self.serial.timeout = old_timeout
