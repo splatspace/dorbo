@@ -104,7 +104,14 @@ def main():
                 # Convert to int to removing leading zeroes
                 facility = int(fob_match.group('facility'))
                 user = int(fob_match.group('user'))
-                sys.stdout.write('%s %s\n' % (facility, user))
+                if facility > 255:
+                    sys.stderr.write('Ignoring invalid "facility" part of '
+                                     'fob number: %s\n' % record)
+                elif user > 65536:
+                    sys.stderr.write('Ignoring invalid "user" part of '
+                                     'fob number: %s\n' % record)
+                else:
+                    sys.stdout.write('%s %s\n' % (facility, user))
             else:
                 sys.stderr.write('Ignoring enabled record with invalid fob '
                                  'number: %s\n' % record)
